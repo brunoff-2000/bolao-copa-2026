@@ -90,14 +90,43 @@ const SEMIS = [
 ];
 const FINAL_DATE = 'DOM 19/07';
 const CHAMPION_OPTIONS = ['franca','espanha','inglaterra','argentina'];
+// Artilheiros: sigla de 3 letras (padrão FIFA/olímpico) + gols marcados até aqui.
+// `eliminated` só marca visualmente — o jogador continua selecionável (alguém pode
+// tê-lo escolhido antes de ser eliminado). Dados de antes das semifinais.
 const SCORERS = [
-  { id:'messi',      name:'Messi',      flag:'🇦🇷' },
-  { id:'mbappe',     name:'Mbappé',     flag:'🇫🇷' },
-  { id:'haaland',    name:'Haaland',    flag:'🇳🇴' },
-  { id:'kane',       name:'Kane',       flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { id:'dembele',    name:'Dembélé',    flag:'🇫🇷' },
-  { id:'bellingham', name:'Bellingham', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { id:'messi',      name:'Messi',      code:'ARG', goals:8 },
+  { id:'mbappe',     name:'Mbappé',     code:'FRA', goals:8 },
+  { id:'haaland',    name:'Haaland',    code:'NOR', goals:7, eliminated:true },
+  { id:'kane',       name:'Kane',       code:'ENG', goals:6 },
+  { id:'bellingham', name:'Bellingham', code:'ENG', goals:6 },
+  { id:'dembele',    name:'Dembélé',    code:'FRA', goals:5 },
 ];
+
+/* ---------- Trava simples da aba Resultados ----------
+   ATENÇÃO: isto é apenas uma BARREIRA DE UI, NÃO é segurança de verdade.
+   A senha abaixo fica visível no código-fonte deste site (que é público no
+   GitHub), então qualquer pessoa com um mínimo de conhecimento técnico consegue
+   contorná-la (basta ler este arquivo ou editar o sessionStorage no navegador).
+   O objetivo é só evitar que alguém mexa nos resultados por engano ou brincadeira
+   — não protege contra uso malicioso. Nunca guarde nada sensível aqui.
+   O desbloqueio vale só para a sessão do navegador (sessionStorage): ao fechar e
+   reabrir o navegador, a senha é pedida de novo. */
+const RESULTS_PASSWORD   = 'copa2026';
+const RESULTS_UNLOCK_KEY = 'bolao-copa-2026/results-unlocked';
+function resultsUnlocked(){
+  try{ return sessionStorage.getItem(RESULTS_UNLOCK_KEY) === '1'; }catch(e){ return false; }
+}
+function tryUnlockResults(){
+  const inp = $('#resultsPass');
+  const val = inp ? inp.value : '';
+  if(val === RESULTS_PASSWORD){
+    try{ sessionStorage.setItem(RESULTS_UNLOCK_KEY, '1'); }catch(e){}
+    render();
+  }else{
+    renderResultsGate(true);                         // mostra "Senha incorreta"
+    const f = $('#resultsPass'); if(f){ f.focus(); f.select(); }
+  }
+}
 
 // Pontos
 const PTS_EXACT = 5;   // placar exato dos 90 minutos
@@ -305,7 +334,7 @@ function render(){
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
 
   if(tab==='picks')   renderPicks();
-  else if(tab==='results') renderResults();
+  else if(tab==='results') resultsUnlocked() ? renderResults() : renderResultsGate();
   else renderScore();
 }
 
@@ -352,7 +381,7 @@ function renderPicks(){
         <p class="pick-cap">🥇 ARTILHEIRO / CHUTEIRA DE OURO (+5)</p>
         <div class="opt-grid3">${SCORERS.map(s => optBtn({
           sel: pick.topScorer===s.id, disabled:L, action:'scorer', data:{id:s.id},
-          html:`<span class="flag">${s.flag}</span>${s.name}`
+          cls: s.eliminated ? 'opt-elim' : '', html: scorerOptHtml(s)
         })).join('')}</div>
       </div>
     </div>`);
@@ -399,6 +428,27 @@ function renderPicks(){
   viewEl.innerHTML = parts.join('');
 }
 
+/* --------------------------- TRAVA DE RESULTADOS --------------------------- */
+// Tela de senha da aba Resultados. Só barreira de UI (ver comentário em RESULTS_PASSWORD).
+function renderResultsGate(err){
+  viewEl.innerHTML = `
+    <div class="ticket card">
+      <div class="card-head">
+        <span class="card-title">Resultados</span>
+        <span class="badge badge-lock">🔒 PROTEGIDO</span>
+      </div>
+      <p class="hint" style="margin:0 0 12px">
+        Esta aba pede senha para evitar que alguém lance resultados por engano.
+        As abas <b>Palpites</b> e <b>Placar</b> continuam abertas para todo mundo.</p>
+      <label class="field-label mono" for="resultsPass">SENHA</label>
+      <input id="resultsPass" class="name-input" type="password" autocomplete="off"
+             placeholder="Digite a senha" style="margin-bottom:${err?'6px':'12px'}">
+      ${err ? `<p class="pass-error mono">Senha incorreta</p>` : ''}
+      <button class="btn btn-primary btn-block" data-action="unlock-results">Entrar</button>
+    </div>`;
+  const f = $('#resultsPass'); if(f) f.focus();
+}
+
 /* -------------------------------- RESULTADOS ------------------------------- */
 function renderResults(){
   const R = state.results;
@@ -429,7 +479,7 @@ function renderResults(){
           <p class="pick-cap">🥇 ARTILHEIRO REAL</p>
           <div class="opt-grid3">${SCORERS.map(s => optBtn({
             sel: R.topScorer===s.id, disabled:false, action:'r-scorer', data:{id:s.id},
-            html:`<span class="flag">${s.flag}</span>${s.name}`
+            cls: s.eliminated ? 'opt-elim' : '', html: scorerOptHtml(s)
           })).join('')}</div>
         </div>
       </div>`);
@@ -506,7 +556,15 @@ function stepper(action, game, side, val, disabled){
 }
 function optBtn(o){
   const attrs = Object.entries(o.data||{}).map(([k,v])=>`data-${k}="${v}"`).join(' ');
-  return `<button class="opt ${o.sel?'sel':''}" data-action="${o.action}" ${attrs} ${o.disabled?'disabled':''}>${o.html}</button>`;
+  const cls = ['opt', o.cls||'', o.sel?'sel':''].filter(Boolean).join(' ');
+  return `<button class="${cls}" data-action="${o.action}" ${attrs} ${o.disabled?'disabled':''}>${o.html}</button>`;
+}
+// Conteúdo do botão de artilheiro: "ARG · Messi · 8 gols" + tag "eliminado".
+function scorerOptHtml(s){
+  return `<span class="scorer-code mono">${esc(s.code)}</span>` +
+         `<span class="scorer-name">${esc(s.name)}</span>` +
+         `<span class="scorer-goals mono">${s.goals} gols</span>` +
+         (s.eliminated ? `<span class="scorer-elim">eliminado</span>` : '');
 }
 
 /* ---------------------------------- PLACAR --------------------------------- */
@@ -602,6 +660,9 @@ document.addEventListener('click', ev=>{
     case 'pick-player': me = d.id; saveMe(me); render(); break;
     case 'switch-player': me = null; saveMe(null); render(); break;
 
+    /* ---- Trava da aba Resultados (só barreira de UI) ---- */
+    case 'unlock-results': tryUnlockResults(); break;
+
     /* ---- Palpites: steppers e opções (escreve só em bolao/picks/{me}) ---- */
     case 'step': {
       const p = myPick();
@@ -687,10 +748,14 @@ document.addEventListener('click', ev=>{
 
 // Enter no campo de nome
 document.addEventListener('keydown', ev=>{
-  if(ev.key==='Enter' && ev.target && ev.target.id==='nameInput'){
+  if(ev.key!=='Enter' || !ev.target) return;
+  if(ev.target.id==='nameInput'){
     ev.preventDefault();
     const name = ev.target.value.trim();
     if(name) enterAs(name);
+  }else if(ev.target.id==='resultsPass'){
+    ev.preventDefault();
+    tryUnlockResults();
   }
 });
 

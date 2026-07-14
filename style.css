@@ -104,6 +104,8 @@ body{
   background:var(--green); color:#fff; font-weight:700; font-size:14px; flex:0 0 auto;
 }
 .gate-note{ font-size:12px; color:var(--ink-soft); text-align:center; margin:16px 0 0; }
+/* mensagem de erro da senha da aba Resultados */
+.pass-error{ color:var(--red); font-size:12px; letter-spacing:.04em; margin:0 0 12px; }
 
 /* ============================================================
    APP SHELL
@@ -193,8 +195,21 @@ body{
 .opt:disabled{ cursor:default; }
 .opt:disabled:not(.sel){ opacity:.45; }
 .opt-grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-.opt-grid3 .opt{ flex-direction:column; gap:4px; font-size:13px; padding:9px 4px; }
+.opt-grid3 .opt{ flex-direction:column; gap:3px; font-size:13px; padding:9px 4px; }
 .opt-grid3 .opt .flag{ font-size:22px; }
+
+/* ---------- botão de artilheiro (sigla · nome · gols) ---------- */
+.scorer-code{ font-size:12px; font-weight:700; letter-spacing:.06em; color:var(--ink-soft); }
+.opt.sel .scorer-code{ color:var(--green-dk); }
+.scorer-name{ font-weight:600; line-height:1.1; }
+.scorer-goals{ font-size:11px; color:var(--ink-soft); letter-spacing:.02em; }
+/* eliminado: fica esmaecido mas continua selecionável (não é disabled) */
+.opt-elim:not(.sel){ opacity:.55; }
+.scorer-elim{
+  font-family:var(--f-mono); font-size:9px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--red); background:#fbe4e2;
+  border-radius:999px; padding:1px 7px; margin-top:1px;
+}
 
 /* ---------- barra de travar ---------- */
 .lockbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:4px; }
