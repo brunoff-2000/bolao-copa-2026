@@ -1,0 +1,18 @@
+# Config do Firebase.
+#
+# DECISÃO INTENCIONAL: para o GitHub Pages (site estático, sem build e sem
+# variáveis de ambiente) o app PRECISA do firebase-config.js publicado ao lado
+# do index.html, senão o site no ar não funciona. As chaves do Firebase para web
+# não são segredo (ficam expostas no navegador de qualquer jeito) e a segurança
+# real vem das REGRAS do Realtime Database. Sendo um bolão de família, versionar
+# o firebase-config.js real é aceitável — por isso a exceção abaixo.
+#
+# O firebase-config.example.js (modelo, com placeholders) também é versionado.
+!firebase-config.js
+!firebase-config.example.js
+
+# Lixo de sistema / testes
+.DS_Store
+Thumbs.db
+.playwright-mcp/
+node_modules/

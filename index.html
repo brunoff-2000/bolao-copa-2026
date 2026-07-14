@@ -1,0 +1,119 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bolão da Copa 2026</title>
+<meta name="theme-color" content="#f4efe4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Fontes são só cosméticas: se estiver offline, cai no fallback do sistema e o app funciona igual. -->
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<!-- ==================== TELA DE CONEXÃO (boot) ==================== -->
+<section id="boot" class="boot">
+  <div class="ticket boot-card">
+    <div id="bootSpin" class="boot-spin"></div>
+    <p id="bootMsg" class="boot-msg mono">CONECTANDO…</p>
+    <button id="bootRetry" class="btn btn-primary" hidden onclick="location.reload()">Recarregar</button>
+  </div>
+</section>
+
+<!-- indicador discreto de sincronização (reconexão) -->
+<div id="syncBadge" class="sync-badge mono" hidden>sincronizando…</div>
+
+<!-- ==================== TELA DE ENTRADA (gate) ==================== -->
+<section id="gate" class="gate" hidden>
+  <div class="ticket gate-card">
+    <div class="ticket-top">
+      <span class="stub">BOLÃO</span>
+      <span class="stub">COPA 2026</span>
+    </div>
+    <h1 class="gate-title">Bolão da Copa</h1>
+    <p class="gate-sub mono">SEMIS &amp; FINAL · 3 JOGOS</p>
+
+    <label class="field-label mono" for="nameInput">SEU NOME</label>
+    <input id="nameInput" class="name-input" type="text" autocomplete="off"
+           placeholder="Ex: Bruno" maxlength="24">
+    <button id="enterBtn" class="btn btn-primary btn-block" data-action="enter">
+      Entrar e palpitar
+    </button>
+
+    <div id="knownPlayers" class="known-players"></div>
+    <p class="gate-note">Sincroniza entre celulares com internet — sem internet, os palpites não salvam.</p>
+  </div>
+</section>
+
+<!-- ==================== APP PRINCIPAL ==================== -->
+<main id="app" class="app" hidden>
+  <header class="app-header">
+    <div class="app-title">BOLÃO DA COPA <span class="mono">2026</span></div>
+    <div id="whoami" class="whoami"></div>
+  </header>
+
+  <section id="view" class="view"><!-- conteúdo da aba renderizado pelo JS --></section>
+
+  <nav class="tabbar">
+    <button class="tab" data-tab="picks">
+      <span class="tab-ico">🎟️</span><span class="tab-label">Palpites</span>
+    </button>
+    <button class="tab" data-tab="results">
+      <span class="tab-ico">📣</span><span class="tab-label">Resultados</span>
+    </button>
+    <button class="tab" data-tab="score">
+      <span class="tab-ico">🏆</span><span class="tab-label">Placar</span>
+    </button>
+  </nav>
+</main>
+
+<!-- Config do Firebase (fora do git). Script clássico → funciona abrindo o arquivo direto. -->
+<script src="firebase-config.js"></script>
+<!-- Lógica de UI + pontuação (script clássico, expõe window.BolaoApp). -->
+<script src="app.js"></script>
+
+<!-- ==================== CAMADA FIREBASE (SDK modular v9+ via CDN) ====================
+     Módulo INLINE de propósito: import de módulo externo local seria bloqueado por
+     CORS ao abrir via file://; inline + imports HTTPS do gstatic funcionam direto do
+     arquivo. Só precisa de internet. Toda a persistência mora aqui. -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const App = window.BolaoApp;
+  const cfg = window.firebaseConfig;
+
+  if(!App){ console.error('app.js não carregou antes do módulo Firebase.'); }
+  else if(!cfg){
+    App.showBootError('Faltando firebase-config.js — veja o README.');
+  }else{
+    try{
+      const app  = initializeApp(cfg);
+      const auth = getAuth(app);
+      const db   = getDatabase(app);
+
+      // API de escrita SEMPRE por caminho específico (nunca sobrescreve "bolao" inteiro).
+      const persist = {
+        set:    (path, value) => set(ref(db, path), value).catch(e => console.warn('escrita falhou:', path, e)),
+        remove: (path)        => remove(ref(db, path)).catch(e => console.warn('remoção falhou:', path, e)),
+      };
+
+      // Indicador de reconexão (caminho especial do RTDB).
+      onValue(ref(db, '.info/connected'), snap => App.setSyncing(snap.val() === false));
+
+      // Login anônimo antes de liberar o app.
+      signInAnonymously(auth).then(() => {
+        App.attachPersistence(persist);
+        // Listener em tempo real: qualquer mudança remota re-renderiza a UI.
+        onValue(ref(db, 'bolao'),
+          snap => App.applyRemoteState(snap.val()),
+          err  => { console.error('Leitura do RTDB falhou:', err); App.showBootError(); }
+        );
+      }).catch(e => {
+        console.error('Autenticação anônima falhou:', e);
+        App.showBootError();
+      });
+    }catch(e){
+      console.error('Inicialização do Firebase falhou:', e);
+      App.showBootError();
+    }
+  }
+</script>

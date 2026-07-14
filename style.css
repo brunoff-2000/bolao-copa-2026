@@ -1,0 +1,261 @@
+/* ============================================================
+   Bolão da Copa 2026 — tema "cupom de aposta", mobile-first (~380px)
+   Paleta: papel claro, verde-campo (destaque), dourado/âmbar (vitória)
+   ============================================================ */
+
+:root{
+  --paper:      #f2ecdd;   /* fundo tipo papel, não branco puro */
+  --paper-2:    #fbf7ee;   /* cartão */
+  --ink:        #22261a;
+  --ink-soft:   #5c6150;
+  --line:       #d9cfb8;   /* linhas/serrilhado do cupom */
+  --green:      #2f7d3a;   /* verde-campo, destaque principal */
+  --green-dk:   #1f5a29;
+  --gold:       #c99a24;   /* dourado/âmbar, vitória/liderança */
+  --gold-soft:  #f4e6b8;
+  --red:        #b23b32;   /* AO VIVO */
+  --ok:         #2f7d3a;
+  --shadow:     0 2px 0 rgba(0,0,0,.06), 0 8px 22px rgba(40,35,15,.10);
+
+  --f-display: 'Bebas Neue', 'Arial Narrow', system-ui, sans-serif;
+  --f-mono:    'Space Mono', ui-monospace, 'Courier New', monospace;
+  --f-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+*{ box-sizing:border-box; }
+[hidden]{ display:none !important; }   /* garante que .gate/.app escondidos somem mesmo com display:grid */
+html,body{ margin:0; }
+body{
+  font-family:var(--f-body);
+  color:var(--ink);
+  background:
+    radial-gradient(circle at 12% -5%, #fff8ea 0%, transparent 40%),
+    var(--paper);
+  -webkit-text-size-adjust:100%;
+  line-height:1.4;
+}
+.mono{ font-family:var(--f-mono); letter-spacing:.02em; }
+
+/* ============================================================
+   BOOT (conectando / erro) e indicador de sincronização
+   ============================================================ */
+.boot{ position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:24px;
+  background:radial-gradient(circle at 12% -5%, #fff8ea 0%, transparent 40%), var(--paper); }
+.boot-card{ width:100%; max-width:340px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:16px; }
+.boot-spin{ width:34px; height:34px; border-radius:50%; border:3px solid var(--line);
+  border-top-color:var(--green); animation:boot-spin 0.8s linear infinite; }
+@keyframes boot-spin{ to{ transform:rotate(360deg); } }
+.boot-msg{ font-size:13px; letter-spacing:.16em; color:var(--ink-soft); margin:0; }
+.boot.error .boot-spin{ display:none; }
+.boot.error .boot-msg{ color:var(--red); }
+
+.sync-badge{ position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:40;
+  background:var(--gold-soft); color:#8a6d10; font-size:11px; letter-spacing:.08em;
+  padding:4px 12px; border-radius:999px; box-shadow:var(--shadow); }
+
+/* ---------- cupom / ticket ---------- */
+.ticket{
+  position:relative;
+  background:var(--paper-2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:var(--shadow);
+  padding:18px 16px;
+}
+.ticket-top{
+  display:flex; justify-content:space-between;
+  border-bottom:2px dashed var(--line);
+  padding-bottom:10px; margin-bottom:12px;
+}
+.stub{
+  font-family:var(--f-mono); font-weight:700; font-size:12px;
+  letter-spacing:.18em; color:var(--ink-soft);
+}
+
+/* ============================================================
+   GATE
+   ============================================================ */
+.gate{ min-height:100dvh; display:grid; place-items:center; padding:20px; }
+.gate-card{ width:100%; max-width:420px; }
+.gate-title{
+  font-family:var(--f-display); font-weight:400;
+  font-size:52px; line-height:.92; margin:2px 0 2px; color:var(--green-dk);
+  letter-spacing:.01em;
+}
+.gate-sub{ margin:0 0 18px; color:var(--gold); font-size:13px; letter-spacing:.16em; }
+.field-label{ display:block; font-size:11px; color:var(--ink-soft); letter-spacing:.14em; margin-bottom:6px; }
+.name-input{
+  width:100%; font-size:18px; font-family:var(--f-body);
+  padding:13px 14px; border:1.5px solid var(--line); border-radius:10px;
+  background:#fff; color:var(--ink); margin-bottom:12px;
+}
+.name-input:focus{ outline:none; border-color:var(--green); box-shadow:0 0 0 3px rgba(47,125,58,.15); }
+.known-players{ margin-top:16px; display:flex; flex-direction:column; gap:8px; }
+.known-players:empty{ display:none; }
+.known-head{ font-size:11px; letter-spacing:.14em; color:var(--ink-soft); margin-bottom:2px; }
+.player-chip{
+  display:flex; align-items:center; gap:10px; width:100%;
+  background:#fff; border:1px solid var(--line); border-radius:10px;
+  padding:11px 14px; font-size:16px; text-align:left; cursor:pointer; color:var(--ink);
+}
+.player-chip:active{ transform:translateY(1px); }
+.player-chip .avatar{
+  width:28px; height:28px; border-radius:50%; display:grid; place-items:center;
+  background:var(--green); color:#fff; font-weight:700; font-size:14px; flex:0 0 auto;
+}
+.gate-note{ font-size:12px; color:var(--ink-soft); text-align:center; margin:16px 0 0; }
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+.app{ max-width:520px; margin:0 auto; padding:14px 12px 88px; min-height:100dvh; }
+.app-header{
+  display:flex; align-items:baseline; justify-content:space-between;
+  gap:10px; margin-bottom:12px; flex-wrap:wrap;
+}
+.app-title{ font-family:var(--f-display); font-size:30px; color:var(--green-dk); line-height:1; }
+.app-title .mono{ font-size:15px; color:var(--gold); }
+.whoami{ font-size:12px; color:var(--ink-soft); }
+
+.view{ display:flex; flex-direction:column; gap:14px; }
+
+/* ---------- tabbar fixa ---------- */
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0;
+  display:flex; background:var(--paper-2);
+  border-top:1px solid var(--line);
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+  box-shadow:0 -6px 20px rgba(40,35,15,.08); z-index:20;
+}
+.tab{
+  flex:1; background:none; border:0; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:6px 4px; color:var(--ink-soft); border-radius:10px;
+}
+.tab-ico{ font-size:20px; line-height:1; }
+.tab-label{ font-size:11px; font-weight:600; }
+.tab.active{ color:var(--green-dk); background:rgba(47,125,58,.10); }
+
+/* ============================================================
+   CARDS DE JOGO / SEÇÕES
+   ============================================================ */
+.card{ }
+.card-head{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:12px; gap:8px;
+}
+.card-title{ font-family:var(--f-display); font-size:24px; color:var(--ink); line-height:1; }
+.card-date{ font-family:var(--f-mono); font-size:11px; color:var(--ink-soft); letter-spacing:.08em; }
+.badge{
+  font-family:var(--f-mono); font-size:10px; font-weight:700; letter-spacing:.12em;
+  padding:3px 8px; border-radius:999px; white-space:nowrap;
+}
+.badge-live{ background:#fbe4e2; color:var(--red); }
+.badge-open{ background:var(--gold-soft); color:#8a6d10; }
+.badge-lock{ background:#e7e0cf; color:var(--ink-soft); }
+.badge-done{ background:#dcecdd; color:var(--green-dk); }
+
+/* ---------- linha de placar (stepper) ---------- */
+.match{ display:flex; flex-direction:column; gap:10px; }
+.score-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.team{ display:flex; align-items:center; gap:8px; min-width:0; flex:1; }
+.team.away{ flex-direction:row-reverse; text-align:right; }
+.flag{ font-size:26px; line-height:1; }
+.team-name{ font-weight:600; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.stepper{ display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+.step-btn{
+  width:34px; height:34px; border-radius:9px; border:1.5px solid var(--line);
+  background:#fff; font-size:20px; line-height:1; color:var(--green-dk);
+  cursor:pointer; display:grid; place-items:center; font-weight:700;
+}
+.step-btn:active{ transform:translateY(1px); }
+.step-btn:disabled{ opacity:.4; cursor:default; }
+.score-num{
+  font-family:var(--f-display); font-size:34px; min-width:30px; text-align:center; line-height:1;
+}
+.score-x{ font-family:var(--f-mono); color:var(--ink-soft); font-size:14px; padding:0 2px; }
+
+/* ---------- botões "quem avança / campeão" ---------- */
+.pick-block{ margin-top:6px; }
+.pick-cap{ font-size:11px; letter-spacing:.12em; color:var(--ink-soft); margin:0 0 7px; font-family:var(--f-mono); }
+.opt-row{ display:flex; gap:8px; flex-wrap:wrap; }
+.opt{
+  flex:1 1 auto; min-width:0;
+  border:1.5px solid var(--line); background:#fff; color:var(--ink);
+  border-radius:10px; padding:10px 8px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  font-size:14px; font-weight:600;
+}
+.opt .flag{ font-size:20px; }
+.opt:active{ transform:translateY(1px); }
+.opt.sel{ border-color:var(--green); background:rgba(47,125,58,.12); color:var(--green-dk); box-shadow:inset 0 0 0 1px var(--green); }
+.opt:disabled{ cursor:default; }
+.opt:disabled:not(.sel){ opacity:.45; }
+.opt-grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.opt-grid3 .opt{ flex-direction:column; gap:4px; font-size:13px; padding:9px 4px; }
+.opt-grid3 .opt .flag{ font-size:22px; }
+
+/* ---------- barra de travar ---------- */
+.lockbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+.hint{ font-size:12px; color:var(--ink-soft); }
+.note-soft{
+  font-size:13px; color:var(--ink-soft); background:#fff; border:1px dashed var(--line);
+  border-radius:10px; padding:14px; text-align:center;
+}
+
+/* ---------- botões ---------- */
+.btn{
+  font-family:var(--f-body); font-weight:600; font-size:15px;
+  border-radius:10px; border:1.5px solid var(--line); background:#fff; color:var(--ink);
+  padding:11px 14px; cursor:pointer;
+}
+.btn:active{ transform:translateY(1px); }
+.btn-primary{ background:var(--green); border-color:var(--green); color:#fff; }
+.btn-gold{ background:var(--gold); border-color:var(--gold); color:#3a2e05; }
+.btn-ghost{ background:transparent; }
+.btn-danger{ color:var(--red); border-color:#e3b7b3; background:#fff; }
+.btn-block{ width:100%; display:block; }
+.btn-sm{ padding:8px 12px; font-size:13px; }
+.btn:disabled{ opacity:.45; cursor:default; }
+.btn-link{
+  background:none; border:0; color:var(--green-dk); font-weight:600; cursor:pointer;
+  font-size:13px; text-decoration:underline; padding:0;
+}
+
+/* ---------- LANÇAR resultado toggle ---------- */
+.launch-row{ display:flex; align-items:center; gap:10px; margin-top:4px; }
+
+/* ============================================================
+   PLACAR / RANKING
+   ============================================================ */
+.rank-list{ display:flex; flex-direction:column; gap:10px; }
+.rank-item{ padding:0; overflow:hidden; }
+.rank-head{
+  display:flex; align-items:center; gap:12px; width:100%;
+  background:none; border:0; cursor:pointer; padding:14px 16px; text-align:left; color:inherit;
+}
+.rank-pos{ font-family:var(--f-display); font-size:26px; color:var(--ink-soft); width:26px; text-align:center; }
+.rank-name{ flex:1; font-weight:600; font-size:17px; display:flex; align-items:center; gap:7px; min-width:0; }
+.rank-name .name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.crown{ font-size:18px; }
+.rank-pts{ font-family:var(--f-display); font-size:30px; color:var(--green-dk); line-height:1; }
+.rank-pts small{ font-family:var(--f-mono); font-size:10px; color:var(--ink-soft); display:block; text-align:right; letter-spacing:.1em; }
+.leader{ box-shadow:inset 0 0 0 2px var(--gold), var(--shadow); }
+.tiebreak-note{ font-size:11px; color:var(--gold); font-family:var(--f-mono); padding:0 16px 10px; margin-top:-6px; }
+.chev{ color:var(--ink-soft); transition:transform .15s; }
+.rank-head[aria-expanded="true"] .chev{ transform:rotate(90deg); }
+
+.detail{ border-top:1px dashed var(--line); padding:12px 16px 14px; display:flex; flex-direction:column; gap:9px; background:#fff; }
+.detail-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; font-size:13px; }
+.detail-row .lbl{ color:var(--ink-soft); }
+.detail-row .lbl b{ color:var(--ink); font-weight:600; }
+.detail-row .val{ text-align:right; white-space:nowrap; }
+.detail-row .pts{ font-family:var(--f-mono); font-weight:700; }
+.pts.win{ color:var(--green-dk); }
+.pts.zero{ color:var(--ink-soft); }
+.detail-wait{ color:var(--ink-soft); font-style:italic; }
+.tick{ color:var(--green-dk); }
+.cross{ color:var(--red); }
+
+.danger-zone{ margin-top:18px; }
